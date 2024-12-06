@@ -1,0 +1,25 @@
+{
+  "name": "gvhtt-score-board",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "fast-xml-parser": "^4.5.0",
+    "socket.io-client": "^4.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2"
+  },
+  "private": true,
+  "volta": {
+    "node": "20.17.0",
+    "npm": "10.8.2"
+  }
+}
