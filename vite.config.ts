@@ -7,7 +7,7 @@ export default defineConfig({
     base: '/',
     root: 'src/html',
     build: {
-        outDir: 'dist',
+        outDir: '../../dist/html/',
     },
     server: {
         port: 5001,
