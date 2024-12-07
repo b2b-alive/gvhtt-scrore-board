@@ -1,6 +1,6 @@
 import axios from "axios";
 import {XMLParser} from "fast-xml-parser";
-import https from "https";
+// import https from "https";
 
 export type Match = {
     idDivision: string;
@@ -49,9 +49,9 @@ class MatchsLoader {
         for (const division of DIVISIONS) {
             const url = `https://fftt.dafunker.com//v1/proxy/xml_result_equ.php?force=1&D1=${division.id}`;
             const res = await axios.get(url, {
-                httpsAgent: new https.Agent({
-                    rejectUnauthorized: false
-                })
+                // httpsAgent: new https.Agent({
+                //     rejectUnauthorized: false
+                // })
             });
             const data = res?.data;
 

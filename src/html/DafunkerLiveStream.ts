@@ -1,9 +1,77 @@
-import {LiveStreamConfig} from "./LiveStreamConfig";
 import {io, Socket} from "socket.io-client";
-import MatchsLoader from "./MatchsLoader";
-import {LiveStreamEvent} from "./types/LiveStream";
-import {formatTeamName, getPlayer, getServer} from "./Utils";
-import BusServer from "./BusServer";
+import MatchsLoader from "../MatchsLoader";
+import {formatTeamName, getPlayer, getServer} from "../Utils";
+
+type DafunkerMainStreamState = {
+    idRencontre?: string;
+    isMale?: boolean;
+    screen?: string;
+    shortnameEquipe1?: string;
+    shortnameEquipe2?: string;
+    displayGlobalScore?: boolean;
+    displayScreen?: boolean;
+    divisionName?: string;
+}
+
+type DafunkerLiveStreamPlayer = {
+    licence: string;
+    prenom: string;
+    nom: string;
+    classement: string;
+    country: string;
+    country_code: string;
+    photo: string;
+}
+
+type DafunkerLiveStreamTeamAPlayers = {
+    JA1: DafunkerLiveStreamPlayer | null,
+    JA2: DafunkerLiveStreamPlayer | null,
+    JA3: DafunkerLiveStreamPlayer | null,
+    JA4: DafunkerLiveStreamPlayer | null
+}
+
+type DafunkerLiveStreamEvenBPlayers = {
+    JB1: DafunkerLiveStreamPlayer | null,
+    JB2: DafunkerLiveStreamPlayer | null
+    JB3: DafunkerLiveStreamPlayer | null
+    JB4: DafunkerLiveStreamPlayer | null
+}
+
+type DafunkerLiveStreamTeam<AB extends DafunkerLiveStreamTeamAPlayers | DafunkerLiveStreamEvenBPlayers = any> = {
+    score: number;
+    clubnum: string;
+    nom: string;
+    joueurs: AB;
+}
+
+type DafunkerLiveStreamMatch = {
+    id: string;
+    joueur1?: {
+        slotId: string;
+    },
+    joueur2?: {
+        slotId: string;
+    },
+    premier_serveur: "JA" | "JB",
+    livescorer: string;
+    score: [number, number][],
+    status: 'victoire_JA' | 'victoire_JB' | 'en_cours'
+    score_history: (1 | -1)[],
+}
+
+type DafunkerLiveStreamState = {
+    id: string;
+    status: string | "termine" | "bientot",
+    equipe1: DafunkerLiveStreamTeam<DafunkerLiveStreamTeamAPlayers>
+    equipe2: DafunkerLiveStreamTeam<DafunkerLiveStreamEvenBPlayers>
+    parties: DafunkerLiveStreamMatch[],
+    headers: {
+        num_specs: number;
+        heure_debut: string;
+    }
+    date: string,
+}
+
 
 export type LiveStreamStatePlayer = {
     lastname?: string | null;
@@ -32,14 +100,21 @@ export type LiveStreamState = {
     currentMatch: LiveStreamStateMatch | null;
 }
 
-export class LiveStream {
-    private currentConfig: LiveStreamConfig | null = null;
+class DafunkerLiveStream extends EventTarget{
+    private currentConfig: DafunkerMainStreamState | null = null;
     private currentMatchId: string | null = null;
     private leagueName: string | null = null;
 
     private matchSocket: null | Socket = null;
+    private configSocket: null | Socket = null;
 
-    set config(config: LiveStreamConfig) {
+    constructor() {
+        super();
+        this.initConfigSocket();
+    }
+
+
+    set config(config: DafunkerMainStreamState) {
 
         console.log("Setting config", config);
 
@@ -56,6 +131,28 @@ export class LiveStream {
         if (config.divisionName) {
             this.leagueName = config.divisionName;
         }
+    }
+
+    private initConfigSocket() {
+        const socket = io("https://fftt.dafunker.com:3000/livestream_zqsf-ygrz-b0d4-uv5z-bsbm", {
+            transports: ["websocket"],
+            rejectUnauthorized: false
+        });
+
+
+        socket.on("connect", () => {
+            console.log("Config socket connected");
+        });
+
+        socket.on("disconnect", () => {
+            console.log("Config socket disconnected");
+        });
+
+        socket.on("update", (config: DafunkerMainStreamState) => {
+            this.config = config;
+        });
+
+        this.configSocket = socket;
     }
 
 
@@ -98,15 +195,19 @@ export class LiveStream {
             console.log("Message", message);
         });
 
-        socket.on('update_global', (config: LiveStreamEvent) => {
-            const newState = this.parseUpdateGlobal(config);
-            BusServer.sendLiveStreamState(newState);
+        socket.on('update_global', (state: DafunkerLiveStreamState) => {
+            console.log("Update from dafunker stream");
+            const newState = this.parseUpdateGlobal(state);
+            console.log("New state", JSON.stringify(newState, null, 2));
+            this.dispatchEvent(new CustomEvent('state', {
+                detail: newState
+            }));
         });
 
         this.matchSocket = socket;
     }
 
-    private parseUpdateGlobal(config: LiveStreamEvent) {
+    private parseUpdateGlobal(config: DafunkerLiveStreamState) {
         const validMatchs = config.parties.filter((partie) => {
             if (!partie.joueur1?.slotId || !partie.joueur2?.slotId) {
                 return false;
@@ -182,3 +283,5 @@ export class LiveStream {
     }
 
 }
+
+export default new DafunkerLiveStream();
