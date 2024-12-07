@@ -4,7 +4,7 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-    base: '/',
+    base: '/gvhtt-scrore-board/',
     root: 'src/html',
     build: {
         outDir: '../../dist/html/',
