@@ -7,6 +7,8 @@ export function App() {
 
     const [state, setState] = useState<LiveStreamState | null>(null);
 
+    const [scale, setScale] = useState(1);
+
     useEffect(() => {
         const onState = (event: Event) => {
             if (event instanceof CustomEvent) {
@@ -21,13 +23,35 @@ export function App() {
     }, []);
 
 
-    console.log(state);
+    useEffect(() => {
+        const onResize = () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const scale = Math.min(width / 1920, height / 1080);
+            setScale(scale);
+        }
+        window.addEventListener('resize', onResize);
+        onResize();
+        return () => {
+            window.removeEventListener('resize', onResize);
+        }
+    }, []);
+
+
 
     return (
-        <div>
+        <div style={{
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            //backgroundColor: 'red',
+            //transform: `scale(${scale})`,
+        }}>
             {state && <Event state={state}/>}
-            {state?.currentMatch && <Players player1={state.currentMatch.player1} player2={state.currentMatch.player2} server={state.currentMatch.server}/>}
-            {state?.currentMatch && <MatchScore score={state.currentMatch.score}/>}
+            {state?.currentMatch && <Players player1={state.currentMatch.player1} player2={state.currentMatch.player2} server={state.currentMatch.server} score={[
+                state.currentMatch.score[0],
+                state.currentMatch.score[1]
+            ]}/>}
             {state?.currentMatch?.sets && <Score sets={state?.currentMatch?.sets}/>}
         </div>
     );
@@ -37,37 +61,52 @@ type PlayersProps = {
     player1: LiveStreamStatePlayer;
     player2: LiveStreamStatePlayer;
     server: 1 | 2 | null;
+    score: [number, number];
 }
 
-function Players({player1, player2, server}: PlayersProps) {
+function Players({player1, player2, server, score}: PlayersProps) {
     return (
         <div
             style={{
                 display: 'flex',
-                width: '100%'
+                width: '100%',
+                position: 'absolute',
+                top: '350px',
+                color: 'white',
+                alignItems: 'center',
             }}
         >
             <div
                 style={{
-                    color: server === 1 ? 'green' : 'black',
-                    flexGrow: 1,
+                    color: server === 1 ? 'green' : 'white',
                     textAlign: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '2em'
+                    fontSize: '4em',
+                    width: '800px',
                 }}
             >
-                {player1.firstname} {player1.lastname} {player1.classement} {player1.countryCode}
+                <strong>{player1.lastname}</strong> {player1.firstname}
+                {/*{player1.classement} {player1.countryCode}*/}
             </div>
             <div
                 style={{
-                    color: server === 2 ? 'green' : 'black',
                     flexGrow: 1,
                     textAlign: 'center',
                     fontWeight: 'bold',
-                    fontSize: '2em'
+                    fontSize: '4em'
                 }}
             >
-                {player2.firstname} {player2.lastname} {player2.classement} {player2.countryCode}
+                {score[0]} - {score[1]}
+            </div>
+            <div
+                style={{
+                    color: server === 2 ? 'green' : 'white',
+                    textAlign: 'center',
+                    fontSize: '4em',
+                    width: '800px',
+                }}
+            >
+                <strong>{player2.lastname}</strong> {player2.firstname}
+                {/*{player2.classement} {player2.countryCode}*/}
             </div>
         </div>
     );
@@ -86,14 +125,17 @@ function Score({sets}: ScoreProps) {
         }
         return (
             <div style={{
+                position: 'absolute',
+                top: '500px',
                 display: 'flex',
-                width: '100%'
+                width: '100%',
+                fontWeight: 'bold',
+                fontSize: '20em',
+                color: 'white'
             }}>
                 <div style={{
                     flexGrow: 1,
                     textAlign: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '10em'
                 }}>
                     {lastSet[0]}
                 </div>
@@ -101,8 +143,6 @@ function Score({sets}: ScoreProps) {
                     style={{
                         flexGrow: 1,
                         textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '10em'
                     }}
                 >
                     {lastSet[1]}
@@ -121,26 +161,33 @@ function MatchScore({score}: MatchScoreProps) {
         return (
             <div style={{
                 display: 'flex',
-                width: '100%'
+                position: 'absolute',
+                top: '150px',
+                width: '100%',
+                color: 'white',
+                textAlign: 'center',
             }}>
-                <div style={{
-                    flexGrow: 1,
-                    textAlign: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '2em'
-                }}>
-                    {score[0]}
-                </div>
-                <div
-                    style={{
-                        flexGrow: 1,
-                        textAlign: 'center',
-                        fontWeight: 'bold',
-                        fontSize: '2em'
-                    }}
-                >
-                    {score[1]}
-                </div>
+
+                {score[0]} - {score[1]}
+
+                {/*<div style={{*/}
+                {/*    flexGrow: 1,*/}
+                {/*    textAlign: 'center',*/}
+                {/*    fontWeight: 'bold',*/}
+                {/*    fontSize: '2em'*/}
+                {/*}}>*/}
+                {/*    {score[0]}*/}
+                {/*</div>*/}
+                {/*<div*/}
+                {/*    style={{*/}
+                {/*        flexGrow: 1,*/}
+                {/*        textAlign: 'center',*/}
+                {/*        fontWeight: 'bold',*/}
+                {/*        fontSize: '2em'*/}
+                {/*    }}*/}
+                {/*>*/}
+                {/*    {score[1]}*/}
+                {/*</div>*/}
             </div>
         )
     }
@@ -154,22 +201,51 @@ function Event({state}: EventProps) {
     return (
         <div
             style={{
+                position: 'absolute',
+                top: '50px',
+                width: '100%',
                 display: 'flex',
-                paddingBottom: '5em'
+                //paddingBottom: '5em',
+                fontWeight: 'bold',
+                fontSize: '3em',
+                alignItems: 'center',
             }}
         >
-            {state.teams.map((team, index) => (
-                <div key={index}
-                        style={{
-                            flexGrow: 1,
-                            textAlign: 'center',
-                            fontWeight: 'bold',
-                            fontSize: '1em'
-                        }}
-                >
-                    {team.name} {team.score}
+            <div
+                 style={{
+                     width: '40%',
+                     textAlign: 'right',
+                 }}
+            >
+                {state.teams[0].name}
+            </div>
+            <div
+                style={{
+                    width: '20%',
+                    color: 'white',
+                    flexDirection: 'row',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignContent: 'center',
+                    padding: '0 1em',
+                    fontSize: '1.3em',
+                }}
+            >
+                <div>
+                    {state.teams[0].score}
                 </div>
-            ))}
+                <div>
+                    {state.teams[1].score}
+                </div>
+            </div>
+            <div
+                style={{
+                    width: '40%',
+                    textAlign: 'left',
+                }}
+            >
+                {state.teams[1].name}
+            </div>
         </div>
     );
 }
