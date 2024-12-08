@@ -46,6 +46,8 @@ export function App() {
             position: 'relative',
             //backgroundColor: 'red',
             //transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            transform: `scale(0.6666666666666666)`,
         }}>
             {state && <Event state={state}/>}
             {state?.currentMatch && <Players player1={state.currentMatch.player1} player2={state.currentMatch.player2} server={state.currentMatch.server} score={[
